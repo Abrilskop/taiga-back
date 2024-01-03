@@ -1,57 +1,57 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# Este Código Fuente está sujeto a los términos de la Licencia Pública de Mozilla
+# (Mozilla Public License), v. 2.0. Si una copia de la MPL no fue distribuida con este
+# archivo, puede obtener una en http://mozilla.org/MPL/2.0/.
 #
-# Copyright (c) 2021-present Kaleidos Ventures SL
+# Derechos de autor (c) 2021-present Kaleidos Ventures SL
 
 FROM python:3.11-slim
 LABEL maintainer="support@taiga.io"
 
-# Avoid prompting for configuration
+# Evitar solicitudes de configuración interactivas
 ENV DEBIAN_FRONTEND=noninteractive
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONFAULTHANDLER=1
 
-# Use a virtualenv
+# Utilizar un entorno virtual
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Get the code
+# Obtener el código
 COPY . /taiga-back
 WORKDIR /taiga-back
 
-# grab gosu for easy step-down from root
+# Obtener gosu para facilitar la transición de root
 # https://github.com/tianon/gosu/blob/master/INSTALL.md
 ENV GOSU_VERSION 1.12
 
 RUN set -eux; \
     apt-get update; \
-    # install system dependencies
+    # instalar dependencias del sistema
     apt-get install -y \
        build-essential \
        gettext \
-       # libpq5 needed in runtime for psycopg2
+       # libpq5 necesario en tiempo de ejecución para psycopg2
        libpq5 \
        libpq-dev \
        git \
        net-tools \
        procps \
        wget; \
-    # install gosu
+    # instalar gosu
     apt-get install -y --no-install-recommends ca-certificates wget; \
     dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
     wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
 	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
     chmod +x /usr/local/bin/gosu; \
-    # verify gosu signature
+    # verificar la firma de gosu
     export GNUPGHOME="$(mktemp -d)"; \
 	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
 	gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
 	command -v gpgconf && gpgconf --kill all || :; \
 	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
-    # install Taiga dependencies
+    # instalar dependencias de Taiga
     python -m pip install --upgrade pip; \
     python -m pip install wheel; \
     python -m pip install -r requirements.txt; \
@@ -61,12 +61,12 @@ RUN set -eux; \
     chmod +x docker/entrypoint.sh; \
     chmod +x docker/async_entrypoint.sh; \
     cp docker/config.py settings/config.py; \
-    #  create taiga group and user to use it and give permissions over the code (in entrypoint)
+    # crear grupo y usuario taiga para usarlo y dar permisos sobre el código (en entrypoint)
     groupadd --system taiga --gid=999; \
     useradd --system --no-create-home --gid taiga --uid=999 --shell=/bin/bash taiga; \
     mkdir -p /taiga-back/media/exports; \
     chown -R taiga:taiga /taiga-back; \
-    # remove unneeded files and packages
+    # eliminar archivos y paquetes no necesarios
     apt-get purge -y \
        build-essential \
        gettext \
@@ -78,7 +78,7 @@ RUN set -eux; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*; \
     rm -rf /root/.cache; \
-    # clean taiga
+    # limpiar Taiga
     rm requirements.txt; \
     rm requirements-contribs.txt; \
     find . -name '__pycache__' -exec rm -r '{}' +; \

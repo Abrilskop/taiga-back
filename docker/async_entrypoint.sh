@@ -3,18 +3,19 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
-# Copyright (c) 2021-present Kaleidos Ventures SL
 
+# Este script inicia procesos de Celery en el contenedor de Docker asociado a Taiga.
+
+# Establece opciones de shell estrictas
 set -euo pipefail
 
-# Give permission to taiga:taiga after mounting volumes
-echo Give permission to taiga:taiga
+# Da permisos al usuario 'taiga' sobre el directorio /taiga-back después de montar volúmenes
+echo Dando permisos a taiga:taiga
 chown -R taiga:taiga /taiga-back
 
-# Start Celery processes
-echo Starting Celery...
+# Inicia los procesos de Celery
+echo Iniciando Celery...
 exec gosu taiga celery -A taiga.celery worker -B \
-    --concurrency 4 \
-    -l INFO \
+    --concurrency 4 \          # Número de procesos de Celery simultáneos
+    -l INFO \                 # Nivel de registro de Celery (en este caso, INFO)
     "$@"
